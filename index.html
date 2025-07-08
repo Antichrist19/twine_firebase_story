@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Emotion-Based Interactive Story</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDHA6xGxO-QfwwG7vSucBYaTAaAYn0rh1E",
+            authDomain: "twine-emotion-share.firebaseapp.com",
+            projectId: "twine-emotion-share",
+            storageBucket: "twine-emotion-share.firebasestorage.app",
+            messagingSenderId: "733341728736",
+            appId: "1:733341728736:web:c8ad714c8faba80448b585",
+            measurementId: "G-N95QQX502J",
+            databaseURL: "https://twine-emotion-share-default-rtdb.firebaseio.com/"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const params = new URLSearchParams(window.location.search);
+        const playerID = params.get("player") || "unknown";
+
+        window.goToInput = function() {
+            document.getElementById('story').innerHTML = `
+                <h2>How do you feel?</h2>
+                <label>Happiness (0–5):</label><br>
+                <input id="happy" type="number" min="0" max="5"><br><br>
+                <label>Sadness (0–5):</label><br>
+                <input id="sad" type="number" min="0" max="5"><br><br>
+                <button onclick="submitEmotion()">Submit</button>
+            `;
+        }
+
+        window.submitEmotion = function() {
+            const happiness = parseInt(document.getElementById("happy").value);
+            const sadness = parseInt(document.getElementById("sad").value);
+            set(ref(db, "players/" + playerID), {
+                happiness: happiness,
+                sadness: sadness,
+                timestamp: Date.now()
+            });
+            waitForPlayers();
+        }
+
+        function waitForPlayers() {
+            document.getElementById('story').innerHTML = "<h2>Waiting for other players to submit...</h2>";
+
+            const interval = setInterval(async () => {
+                const snapshot = await get(child(ref(db), "players"));
+                const data = snapshot.val();
+                if (data && Object.keys(data).length >= 3) {
+                    clearInterval(interval);
+                    let totalHappy = 0, totalSad = 0;
+                    for (let player in data) {
+                        totalHappy += data[player].happiness;
+                        totalSad += data[player].sadness;
+                    }
+                    if (totalHappy >= totalSad) {
+                        showStoryB();
+                    } else {
+                        showStoryC();
+                    }
+                }
+            }, 3000);
+        }
+
+        function showStoryB() {
+            document.getElementById('story').innerHTML = `
+                <h2>Story B: A Brighter Path</h2>
+                <p>The collective mood was hopeful. Together, you venture toward joy.</p>
+            `;
+        }
+
+        function showStoryC() {
+            document.getElementById('story').innerHTML = `
+                <h2>Story C: A Somber Reflection</h2>
+                <p>The mood was heavy. But from this sadness, a new understanding is born.</p>
+            `;
+        }
+    </script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 700px; margin: auto; padding: 2em; }
+        h2 { color: #444; }
+    </style>
+</head>
+<body>
+    <div id="story">
+        <h2>Welcome</h2>
+        <button onclick="goToInput()">Start Story</button>
+    </div>
+</body>
+</html>
