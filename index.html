@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html data-init="no-js">
 <head>
-<script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-database-compat.js"></script>
 <meta charset="UTF-8" />
 <title>Eyes</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -118,7 +116,6 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
     measurementId: "G-N95QQX502J"
   };
 
-  // Init only if not already initialized
   if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
   }
@@ -135,9 +132,33 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
       console.log("Emotion submitted!", { fear, curiosity });
     }).catch((e) => {
       console.error("Submit error:", e);
+      alert("Error submitting emotion. Please try again.");
     });
   };
 });
+
+window.getAverageEmotion = async function () {
+  const snapshot = await window.database.ref('emotions').once('value');
+  const data = snapshot.val();
+
+  if (!data) return { avgFear: 0, avgCuriosity: 0, count: 0 };
+
+  let totalFear = 0;
+  let totalCuriosity = 0;
+  let count = 0;
+
+  Object.values(data).forEach(entry => {
+    totalFear += entry.fear || 0;
+    totalCuriosity += entry.curiosity || 0;
+    count += 1;
+  });
+
+  return {
+    avgFear: Math.round(totalFear / count),
+    avgCuriosity: Math.round(totalCuriosity / count),
+    count: count
+  };
+};
 </script><tw-passagedata pid="1" name="StoryInit" tags="" position="825,400" size="100,100">&lt;&lt;set $fear = 0&gt;&gt;
 &lt;&lt;set $curiosity = 0&gt;&gt;
 
@@ -271,26 +292,112 @@ You may not survive, but you will not go quietly.
 
 [[FinalEmotion]]
 
-</tw-passagedata><tw-passagedata pid="12" name="Back away in horror → Death" tags="" position="1525,825" size="100,100"></tw-passagedata><tw-passagedata pid="13" name="FinalEmotion" tags="" position="1725,850" size="100,100">&lt;p&gt;Rate your feelings:&lt;/p&gt;
+</tw-passagedata><tw-passagedata pid="12" name="Back away in horror → Death" tags="" position="1525,825" size="100,100"></tw-passagedata><tw-passagedata pid="13" name="FinalEmotion" tags="" position="1725,850" size="100,100">&lt;span id=&quot;emotion-loader&quot;&gt;Loading...&lt;/span&gt;
 
-Fear: 
-&lt;input type=&quot;range&quot; min=&quot;0&quot; max=&quot;5&quot; value=&quot;0&quot;
- onchange=&quot;SugarCube.State.variables.fear = parseInt(this.value)&quot;&gt;&lt;br&gt;
+&lt;div id=&quot;emotion-form&quot; style=&quot;display: none;&quot;&gt;
+  Fear: 
+  &lt;input type=&quot;range&quot; min=&quot;0&quot; max=&quot;5&quot; value=&quot;0&quot;
+   onchange=&quot;SugarCube.State.variables.fear = parseInt(this.value)&quot;&gt;&lt;br&gt;
+  Curiosity: 
+  &lt;input type=&quot;range&quot; min=&quot;0&quot; max=&quot;5&quot; value=&quot;0&quot;
+   onchange=&quot;SugarCube.State.variables.curiosity = parseInt(this.value)&quot;&gt;&lt;br&gt;
 
-Curiosity: 
-&lt;input type=&quot;range&quot; min=&quot;0&quot; max=&quot;5&quot; value=&quot;0&quot;
- onchange=&quot;SugarCube.State.variables.curiosity = parseInt(this.value)&quot;&gt;&lt;br&gt;
-
-&lt;button onclick=&quot;
-  if (window.submitEmotion) {
-    submitEmotion($fear, $curiosity);
+  &lt;button onclick=&quot;
+    submitEmotion(SugarCube.State.variables.fear, SugarCube.State.variables.curiosity);
     alert(&#39;Submitted!&#39;);
     Engine.play(&#39;WaitingForUnity&#39;);
+  &quot;&gt;Submit Emotions&lt;/button&gt;
+&lt;/div&gt;
+
+&lt;&lt;script&gt;&gt;
+(function waitForFirebase() {
+  if (window.submitEmotion) {
+    document.getElementById(&#39;emotion-loader&#39;).style.display = &#39;none&#39;;
+    document.getElementById(&#39;emotion-form&#39;).style.display = &#39;block&#39;;
   } else {
-    alert(&#39;Please wait, function not ready.&#39;);
+    setTimeout(waitForFirebase, 300); // Keep checking every 300ms
   }
-&quot;&gt;Submit Emotions&lt;/button&gt;
-</tw-passagedata><tw-passagedata pid="14" name="WaitingForUnity" tags="" position="1850,850" size="100,100">&lt;p&gt;Waiting for the collective perception to determine your ending...&lt;/p&gt;
+})();
+&lt;&lt;/script&gt;&gt;
+
+</tw-passagedata><tw-passagedata pid="14" name="FinalEmotionDecision" tags="" position="1850,850" size="100,100">&lt;p&gt;Calculating collective emotion...&lt;/p&gt;
+
+&lt;&lt;script&gt;&gt;
+getAverageEmotion().then(function(result) {
+  const fear = result.avgFear;
+  const curiosity = result.avgCuriosity;
+
+  // Store in variables (optional)
+  State.variables.avgFear = fear;
+  State.variables.avgCuriosity = curiosity;
+
+  // Decide which ending to go to
+  if (fear &gt;= 4 &amp;&amp; fear &gt; curiosity) {
+    Engine.play(&quot;Ending_Scared&quot;);
+  } else if (curiosity &gt;= 4 &amp;&amp; curiosity &gt;= fear) {
+    Engine.play(&quot;Ending_Curious&quot;);
+  } else {
+    Engine.play(&quot;Ending_Neutral&quot;);
+  }
+});
+&lt;&lt;/script&gt;&gt;
+</tw-passagedata><tw-passagedata pid="15" name="Ending_Scared" tags="" position="2050,800" size="100,100">The collective fear overwhelmed the moment.  
+The traveler turns and runs into the storm, never looking back...
+
+&lt;p&gt;Collected from all players:&lt;/p&gt;
+
+&lt;p&gt;&lt;span id=&quot;avg-results&quot;&gt;Loading...&lt;/span&gt;&lt;/p&gt;
+
+&lt;&lt;script&gt;&gt;
+getAverageEmotion().then(function(result) {
+  State.variables.avgFear = result.avgFear;
+  State.variables.avgCuriosity = result.avgCuriosity;
+
+  // Update the HTML
+  const el = document.getElementById(&quot;avg-results&quot;);
+  if (el) {
+    el.innerHTML = `Average Fear: ${result.avgFear} &lt;br&gt; Average Curiosity: ${result.avgCuriosity}`;
+  }
+});
+&lt;&lt;/script&gt;&gt;
+</tw-passagedata><tw-passagedata pid="16" name="Ending_Curious" tags="" position="2050,925" size="100,100">Curiosity takes over.  
+He steps forward, facing the girl and the eyeless man with brave resolve...
+
+&lt;p&gt;Collected from all players:&lt;/p&gt;
+
+&lt;p&gt;&lt;span id=&quot;avg-results&quot;&gt;Loading...&lt;/span&gt;&lt;/p&gt;
+
+&lt;&lt;script&gt;&gt;
+getAverageEmotion().then(function(result) {
+  State.variables.avgFear = result.avgFear;
+  State.variables.avgCuriosity = result.avgCuriosity;
+
+  // Update the HTML
+  const el = document.getElementById(&quot;avg-results&quot;);
+  if (el) {
+    el.innerHTML = `Average Fear: ${result.avgFear} &lt;br&gt; Average Curiosity: ${result.avgCuriosity}`;
+  }
+});
+&lt;&lt;/script&gt;&gt;
+</tw-passagedata><tw-passagedata pid="17" name="Ending_Neutral" tags="" position="2050,1050" size="100,100">The emotions are balanced.  
+He stands frozen at the threshold, unsure whether to flee or fight...
+
+&lt;p&gt;Collected from all players:&lt;/p&gt;
+
+&lt;p&gt;&lt;span id=&quot;avg-results&quot;&gt;Loading...&lt;/span&gt;&lt;/p&gt;
+
+&lt;&lt;script&gt;&gt;
+getAverageEmotion().then(function(result) {
+  State.variables.avgFear = result.avgFear;
+  State.variables.avgCuriosity = result.avgCuriosity;
+
+  // Update the HTML
+  const el = document.getElementById(&quot;avg-results&quot;);
+  if (el) {
+    el.innerHTML = `Average Fear: ${result.avgFear} &lt;br&gt; Average Curiosity: ${result.avgCuriosity}`;
+  }
+});
+&lt;&lt;/script&gt;&gt;
 </tw-passagedata></tw-storydata>
 	<script id="script-sugarcube" type="text/javascript">
 	/*! SugarCube JS */
