@@ -5,6 +5,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-database-compat.js"></script>
 
+
 <title>Eyes</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <meta name="application-name" content="SugarCube" />
@@ -287,7 +288,7 @@ The shadows twist. Her face melts into something hollow.
 You may not survive, but you will not go quietly.
 
 
-[[FinalEmotion]]
+[[submitemotions]]
 
 </tw-passagedata><tw-passagedata pid="12" name="Back away in horror → Death" tags="" position="1525,825" size="100,100"></tw-passagedata><tw-passagedata pid="13" name="FinalEmotion" tags="" position="1725,850" size="100,100">:: EmotionAggregate
 &lt;&lt;set $avgFear = null&gt;&gt;
@@ -328,7 +329,56 @@ You may not survive, but you will not go quietly.
   }
 })();
 &lt;&lt;/script&gt;&gt;
-</tw-passagedata><tw-passagedata pid="14" name="FinalEmotionDecision" tags="" position="1850,850" size="100,100"></tw-passagedata><tw-passagedata pid="15" name="FearEnding" tags="" position="2050,800" size="100,100">The collective fear overwhelmed the moment.  
+</tw-passagedata><tw-passagedata pid="14" name="submitemotions" tags="" position="1850,850" size="100,100">:: SubmitEmotions
+&lt;p&gt;Rate your feelings:&lt;/p&gt;
+
+Fear: 
+&lt;input type=&quot;range&quot; min=&quot;0&quot; max=&quot;5&quot; value=&quot;0&quot; 
+  onchange=&quot;SugarCube.State.variables.fear = parseInt(this.value)&quot;&gt;
+&lt;span id=&quot;fearValue&quot;&gt;0&lt;/span&gt;&lt;br&gt;
+
+Curiosity: 
+&lt;input type=&quot;range&quot; min=&quot;0&quot; max=&quot;5&quot; value=&quot;0&quot; 
+  onchange=&quot;SugarCube.State.variables.curiosity = parseInt(this.value)&quot;&gt;
+&lt;span id=&quot;curiosityValue&quot;&gt;0&lt;/span&gt;&lt;br&gt;
+
+&lt;button id=&quot;submitBtn&quot; disabled&gt;Submit Emotions&lt;/button&gt;
+
+&lt;script&gt;
+// Update displayed values dynamically
+document.querySelectorAll(&#39;input[type=range]&#39;).forEach(input =&gt; {
+  input.addEventListener(&#39;input&#39;, e =&gt; {
+    if (e.target.previousElementSibling &amp;&amp; e.target.previousElementSibling.id) {
+      const span = document.getElementById(e.target.previousElementSibling.id);
+      if (span) span.textContent = e.target.value;
+    } else {
+      if (e.target.nextElementSibling) e.target.nextElementSibling.textContent = e.target.value;
+    }
+  });
+});
+
+function checkSubmitReady() {
+  // Enable submit when Firebase function is ready
+  if (window.submitEmotion) {
+    document.getElementById(&#39;submitBtn&#39;).disabled = false;
+  } else {
+    setTimeout(checkSubmitReady, 300);
+  }
+}
+checkSubmitReady();
+
+document.getElementById(&#39;submitBtn&#39;).addEventListener(&#39;click&#39;, () =&gt; {
+  const fear = SugarCube.State.variables.fear || 0;
+  const curiosity = SugarCube.State.variables.curiosity || 0;
+  window.submitEmotion(fear, curiosity)
+    .then(() =&gt; {
+      alert(&#39;Emotions submitted! Proceeding to aggregation...&#39;);
+      Engine.play(&#39;EmotionAggregate&#39;); // jump to aggregation passage
+    })
+    .catch(e =&gt; alert(&#39;Error submitting emotions, try again.&#39;));
+});
+&lt;/script&gt;
+</tw-passagedata><tw-passagedata pid="15" name="FearEnding" tags="" position="2050,800" size="100,100">The collective fear overwhelmed the moment.  
 The traveler turns and runs into the storm, never looking back...
 
 &lt;p&gt;Collected from all players:&lt;/p&gt;
