@@ -107,63 +107,39 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 		<div id="init-lacking"><p>Browser lacks capabilities required to play.</p><p>Upgrade or switch to another browser.</p></div>
 		<div id="init-loading"><div>Loading&hellip;</div></div>
 	</div>
-	<tw-storydata name="Eyes" startnode="2" creator="Twine" creator-version="2.10.0" format="SugarCube" format-version="2.37.3" ifid="71C5F7F8-7392-4B4E-B8B7-345B30ECD088" options="" tags="" zoom="1" hidden><style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css"></style><script role="script" id="twine-user-script" type="text/twine-javascript">setup.firebaseAppInitialized = false;
+	<tw-storydata name="Eyes" startnode="2" creator="Twine" creator-version="2.10.0" format="SugarCube" format-version="2.37.3" ifid="71C5F7F8-7392-4B4E-B8B7-345B30ECD088" options="" tags="" zoom="1" hidden><style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css"></style><script role="script" id="twine-user-script" type="text/twine-javascript">window.firebaseReady = false;
 
-setup.initializeFirebase = function () {
-  if (setup.firebaseAppInitialized) return;
+(function initFirebase() {
+  if (window.firebaseReady) return;
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDHA6xGxO-QfwwG7vSucBYaTAaAYn0rh1E",
+  const cfg = {
+    apiKey: "AIzaSyDHA…", // shortened
     authDomain: "twine-emotion-share.firebaseapp.com",
     databaseURL: "https://twine-emotion-share-default-rtdb.firebaseio.com",
     projectId: "twine-emotion-share",
     storageBucket: "twine-emotion-share.appspot.com",
     messagingSenderId: "733341728736",
-    appId: "1:733341728736:web:c8ad714c8faba80448b585",
-    measurementId: "G-N95QQX502J"
+    appId: "1:733341728736:web:c8ad714c8faba80448b585"
   };
 
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-  }
-
+  firebase.initializeApp(cfg);
   const db = firebase.database();
 
-  setup.submitEmotion = function (fear, curiosity) {
-    const ts = Date.now();
-    return db.ref("emotions/" + ts).set({
-      fear,
-      curiosity,
-      timestamp: ts
-    });
+  window.submitEmotion = (fear, curiosity) =>
+    db.ref('emotions/' + Date.now()).set({ fear, curiosity, timestamp: Date.now() });
+
+  window.getAverageEmotion = async () => {
+    const snap = await db.ref('emotions').once('value');
+    const data = snap.val() || {};
+    const vals = Object.values(data);
+    const sumF = vals.reduce((a, e) => a + (e.fear||0), 0);
+    const sumC = vals.reduce((a, e) => a + (e.curiosity||0), 0);
+    const n = vals.length || 1;
+    return { avgFear: Math.round(sumF/n), avgCuriosity: Math.round(sumC/n) };
   };
 
-  setup.getAverageEmotion = async function () {
-    const snapshot = await db.ref("emotions").once("value");
-    const data = snapshot.val();
-
-    if (!data) return { avgFear: 0, avgCuriosity: 0 };
-
-    let totalFear = 0;
-    let totalCuriosity = 0;
-    let count = 0;
-
-    Object.values(data).forEach(entry => {
-      totalFear += entry.fear || 0;
-      totalCuriosity += entry.curiosity || 0;
-      count++;
-    });
-
-    return {
-      avgFear: Math.round(totalFear / count),
-      avgCuriosity: Math.round(totalCuriosity / count)
-    };
-  };
-
-  setup.firebaseAppInitialized = true;
-};
-
-setup.initializeFirebase(); // Make sure it's initialized
+  window.firebaseReady = true;
+})();
 </script><tw-passagedata pid="1" name="meh" tags="" position="775,375" size="100,100"></tw-passagedata><tw-passagedata pid="2" name="Start" tags="" position="1025,400" size="100,100">You&#39;re shivering in the rain. A distant house gives hope. A girl opens the door — stunning, mysterious.
 
 Do you feel...
@@ -252,94 +228,70 @@ The shadows twist. Her face melts into something hollow.
 You may not survive, but you will not go quietly.
 
 
-[[submitemotions]]
+[[SubmitEmotions]]
 
-</tw-passagedata><tw-passagedata pid="12" name="Back away in horror → Death" tags="" position="1525,825" size="100,100"></tw-passagedata><tw-passagedata pid="13" name="getAverageEmotion" tags="" position="1725,850" size="100,100">:: EmotionAggregate
-&lt;&lt;set $avgFear = null&gt;&gt;
-&lt;&lt;set $avgCuriosity = null&gt;&gt;
-
-&lt;p&gt;Waiting for aggregated emotions from all players...&lt;/p&gt;
-&lt;p id=&quot;result&quot;&gt;Loading...&lt;/p&gt;
+</tw-passagedata><tw-passagedata pid="12" name="Back away in horror → Death" tags="" position="1525,825" size="100,100"></tw-passagedata><tw-passagedata pid="13" name="EmotionAggregate" tags="" position="1725,850" size="100,100">:: EmotionAggregate
+&lt;p&gt;Waiting for aggregated emotions...&lt;/p&gt;
+&lt;p id=&quot;result&quot;&gt;Loading…&lt;/p&gt;
 
 &lt;&lt;script&gt;&gt;
-(function waitForSetup() {
-  if (setup &amp;&amp; typeof setup.getAverageEmotion === &quot;function&quot;) {
-    // Wait 10 seconds before fetching aggregated emotions
+(function waitForAggregation() {
+  if (window.getAverageEmotion) {
     setTimeout(() =&gt; {
-      setup.getAverageEmotion().then(result =&gt; {
-        // Save results to variables
-        SugarCube.State.variables.avgFear = result.avgFear;
-        SugarCube.State.variables.avgCuriosity = result.avgCuriosity;
+      window.getAverageEmotion().then(result =&gt; {
+        document.getElementById(&quot;result&quot;).textContent =
+          `Aggregated after 10s: Fear = ${result.avgFear}, Curiosity = ${result.avgCuriosity}`;
 
-        // Show results on page
-        document.getElementById(&quot;result&quot;).textContent = 
-          `Aggregated emotions after 10 seconds: Fear = ${result.avgFear}, Curiosity = ${result.avgCuriosity}`;
-
-        // Decide ending based on which emotion is higher
         if (result.avgFear &gt; result.avgCuriosity) {
-          Engine.play(&#39;FearEnding&#39;);   // Replace with your fear ending passage name
+          Engine.play(&#39;FearEnding&#39;);
         } else if (result.avgCuriosity &gt; result.avgFear) {
-          Engine.play(&#39;CuriousEnding&#39;); // Replace with your curiosity ending passage name
+          Engine.play(&#39;CuriousEnding&#39;);
         } else {
-          Engine.play(&#39;NeutralEnding&#39;); // Optional tie-breaker ending
+          Engine.play(&#39;NeutralEnding&#39;);
         }
       }).catch(err =&gt; {
-        document.getElementById(&quot;result&quot;).textContent = &quot;Error loading aggregated emotions.&quot;;
+        document.getElementById(&quot;result&quot;).textContent = &quot;Error loading results.&quot;;
         console.error(err);
       });
-    }, 10000); // 10 seconds delay
+    }, 10000);
   } else {
-    setTimeout(waitForSetup, 200);
+    setTimeout(waitForAggregation, 300); // retry until ready
   }
 })();
 &lt;&lt;/script&gt;&gt;
-</tw-passagedata><tw-passagedata pid="14" name="submitemotions" tags="" position="1850,850" size="100,100">:: SubmitEmotions
+</tw-passagedata><tw-passagedata pid="14" name="SubmitEmotions" tags="" position="1850,850" size="100,100">:: SubmitEmotions
 &lt;p&gt;Rate your feelings:&lt;/p&gt;
 
-Fear: 
-&lt;input type=&quot;range&quot; min=&quot;0&quot; max=&quot;5&quot; value=&quot;0&quot; 
-  onchange=&quot;SugarCube.State.variables.fear = parseInt(this.value); updateDisplay(&#39;fearValue&#39;, this.value);&quot;&gt;
-&lt;span id=&quot;fearValue&quot;&gt;0&lt;/span&gt;&lt;br&gt;
-
-Curiosity: 
-&lt;input type=&quot;range&quot; min=&quot;0&quot; max=&quot;5&quot; value=&quot;0&quot; 
-  onchange=&quot;SugarCube.State.variables.curiosity = parseInt(this.value); updateDisplay(&#39;curiosityValue&#39;, this.value);&quot;&gt;
-&lt;span id=&quot;curiosityValue&quot;&gt;0&lt;/span&gt;&lt;br&gt;
-
+Fear: &lt;input type=&quot;range&quot; id=&quot;fearSlider&quot; min=&quot;0&quot; max=&quot;5&quot;&gt;&lt;span id=&quot;fearValue&quot;&gt;0&lt;/span&gt;&lt;br&gt;
+Curiosity: &lt;input type=&quot;range&quot; id=&quot;curiositySlider&quot; min=&quot;0&quot; max=&quot;5&quot;&gt;&lt;span id=&quot;curiosityValue&quot;&gt;0&lt;/span&gt;&lt;br&gt;
 &lt;button id=&quot;submitBtn&quot; disabled&gt;Submit Emotions&lt;/button&gt;
 
 &lt;script&gt;
-function updateDisplay(id, value) {
-  const span = document.getElementById(id);
-  if (span) span.textContent = value;
-}
+document.getElementById(&#39;fearSlider&#39;).addEventListener(&#39;input&#39;, e =&gt; {
+  SugarCube.State.variables.fear = Number(e.target.value);
+  document.getElementById(&#39;fearValue&#39;).textContent = e.target.value;
+});
+document.getElementById(&#39;curiositySlider&#39;).addEventListener(&#39;input&#39;, e =&gt; {
+  SugarCube.State.variables.curiosity = Number(e.target.value);
+  document.getElementById(&#39;curiosityValue&#39;).textContent = e.target.value;
+});
 
-function checkSubmitReady() {
-  if (typeof setup.submitEmotion === &quot;function&quot;) {
+function checkSubmit() {
+  if (window.firebaseReady &amp;&amp; typeof window.submitEmotion === &#39;function&#39;) {
     document.getElementById(&#39;submitBtn&#39;).disabled = false;
-  } else {
-    setTimeout(checkSubmitReady, 300);
-  }
+  } else setTimeout(checkSubmit, 200);
 }
-checkSubmitReady();
+checkSubmit();
 
 document.getElementById(&#39;submitBtn&#39;).addEventListener(&#39;click&#39;, () =&gt; {
-  const fear = SugarCube.State.variables.fear || 0;
-  const curiosity = SugarCube.State.variables.curiosity || 0;
-
-  if (typeof setup.submitEmotion === &quot;function&quot;) {
-    setup.submitEmotion(fear, curiosity)
-      .then(() =&gt; {
-        alert(&#39;Emotions submitted! Proceeding to aggregation...&#39;);
-        Engine.play(&#39;EmotionAggregate&#39;);
-      })
-      .catch(e =&gt; {
-        alert(&#39;Error submitting emotions, please try again.&#39;);
-        console.error(e);
-      });
-  } else {
-    alert(&#39;Firebase not ready yet, please wait.&#39;);
-  }
+  const f = SugarCube.State.variables.fear;
+  const c = SugarCube.State.variables.curiosity;
+  window.submitEmotion(f, c).then(() =&gt; {
+    Engine.play(&#39;EmotionAggregate&#39;);
+  }).catch(e =&gt; {
+    console.error(e);
+    alert(&#39;Submission failed&#39;);
+  });
 });
 &lt;/script&gt;
 </tw-passagedata><tw-passagedata pid="15" name="FearEnding" tags="" position="2050,800" size="100,100">The collective fear overwhelmed the moment.  
