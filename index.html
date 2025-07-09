@@ -278,60 +278,52 @@ You may not survive, but you will not go quietly.
   }
 })();
 &lt;/script&gt;
-</tw-passagedata><tw-passagedata pid="14" name="SubmitEmotions" tags="" position="1850,825" size="100,100">&lt;p&gt;Rate your feelings:&lt;/p&gt;
+</tw-passagedata><tw-passagedata pid="14" name="SubmitEmotions" tags="" position="1850,825" size="100,100">:: SubmitEmotions
+&lt;p&gt;Rate your feelings:&lt;/p&gt;
 
 Fear: 
-&lt;input type=&quot;range&quot; min=&quot;0&quot; max=&quot;5&quot; value=&quot;0&quot; 
-  onchange=&quot;SugarCube.State.variables.fear = parseInt(this.value); updateDisplay(&#39;fearValue&#39;, this.value);&quot;&gt;
+&lt;input type=&quot;range&quot; min=&quot;0&quot; max=&quot;5&quot; value=&quot;0&quot;
+  onchange=&quot;SugarCube.State.variables.fear = parseInt(this.value); document.getElementById(&#39;fearValue&#39;).textContent = this.value;&quot;&gt;
 &lt;span id=&quot;fearValue&quot;&gt;0&lt;/span&gt;&lt;br&gt;
 
 Curiosity: 
-&lt;input type=&quot;range&quot; min=&quot;0&quot; max=&quot;5&quot; value=&quot;0&quot; 
-  onchange=&quot;SugarCube.State.variables.curiosity = parseInt(this.value); updateDisplay(&#39;curiosityValue&#39;, this.value);&quot;&gt;
+&lt;input type=&quot;range&quot; min=&quot;0&quot; max=&quot;5&quot; value=&quot;0&quot;
+  onchange=&quot;SugarCube.State.variables.curiosity = parseInt(this.value); document.getElementById(&#39;curiosityValue&#39;).textContent = this.value;&quot;&gt;
 &lt;span id=&quot;curiosityValue&quot;&gt;0&lt;/span&gt;&lt;br&gt;
 
 &lt;button id=&quot;submitBtn&quot; disabled&gt;Submit Emotions&lt;/button&gt;
 
 &lt;&lt;script&gt;&gt;
-(function() {
-  function updateDisplay(id, value) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = value;
-  }
-
-  function checkSubmitReady() {
-    if (typeof window.submitEmotion === &quot;function&quot;) {
-      const btn = document.getElementById(&#39;submitBtn&#39;);
-      if (btn) btn.disabled = false;
+$(document).on(&#39;passagerender&#39;, function () {
+  function enableButtonWhenReady() {
+    if (typeof window.submitEmotion === &quot;function&quot; &amp;&amp; typeof Engine !== &quot;undefined&quot;) {
+      $(&quot;#submitBtn&quot;).prop(&quot;disabled&quot;, false);
     } else {
-      setTimeout(checkSubmitReady, 300);
+      setTimeout(enableButtonWhenReady, 300);
     }
   }
 
-  // This ensures SugarCube and DOM are ready
-  $(document).on(&#39;passagerender&#39;, function () {
-    checkSubmitReady();
+  enableButtonWhenReady();
 
-    $(&quot;#submitBtn&quot;).off(&quot;click&quot;).on(&quot;click&quot;, function () {
-      const fear = SugarCube.State.variables.fear || 0;
-      const curiosity = SugarCube.State.variables.curiosity || 0;
+  $(&quot;#submitBtn&quot;).off(&quot;click&quot;).on(&quot;click&quot;, function () {
+    const fear = SugarCube.State.variables.fear || 0;
+    const curiosity = SugarCube.State.variables.curiosity || 0;
 
-      if (typeof window.submitEmotion === &quot;function&quot;) {
-        window.submitEmotion(fear, curiosity)
-          .then(() =&gt; {
-            alert(&quot;✅ Emotion submitted!&quot;);
-            Engine.play(&quot;EmotionAggregate&quot;);
-          })
-          .catch(e =&gt; {
-            alert(&quot;❌ Submission failed: &quot; + e.message);
-            console.error(e);
-          });
-      } else {
-        alert(&quot;❗ Firebase not ready yet.&quot;);
-      }
-    });
+    if (typeof window.submitEmotion === &quot;function&quot;) {
+      window.submitEmotion(fear, curiosity)
+        .then(() =&gt; {
+          alert(&quot;✅ Emotions submitted!&quot;);
+          Engine.play(&quot;EmotionAggregate&quot;);  // Safe to use now
+        })
+        .catch(err =&gt; {
+          console.error(err);
+          alert(&quot;❌ Submission failed: &quot; + err.message);
+        });
+    } else {
+      alert(&quot;⚠️ Firebase not ready.&quot;);
+    }
   });
-})();
+});
 &lt;&lt;/script&gt;&gt;
 </tw-passagedata><tw-passagedata pid="15" name="FearEnding" tags="" position="2050,800" size="100,100">The collective fear overwhelmed the moment.  
 The traveler turns and runs into the storm, never looking back...
