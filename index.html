@@ -107,10 +107,10 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 		<div id="init-lacking"><p>Browser lacks capabilities required to play.</p><p>Upgrade or switch to another browser.</p></div>
 		<div id="init-loading"><div>Loading&hellip;</div></div>
 	</div>
-	<tw-storydata name="Eyes" startnode="2" creator="Twine" creator-version="2.10.0" format="SugarCube" format-version="2.37.3" ifid="71C5F7F8-7392-4B4E-B8B7-345B30ECD088" options="" tags="" zoom="1" hidden><style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css"></style><script role="script" id="twine-user-script" type="text/twine-javascript">window.firebaseAppInitialized = false;
+	<tw-storydata name="Eyes" startnode="2" creator="Twine" creator-version="2.10.0" format="SugarCube" format-version="2.37.3" ifid="71C5F7F8-7392-4B4E-B8B7-345B30ECD088" options="" tags="" zoom="1" hidden><style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css"></style><script role="script" id="twine-user-script" type="text/twine-javascript">setup.firebaseAppInitialized = false;
 
-function initializeFirebase() {
-  if (window.firebaseAppInitialized) return;
+setup.initializeFirebase = function () {
+  if (setup.firebaseAppInitialized) return;
 
   const firebaseConfig = {
     apiKey: "AIzaSyDHA6xGxO-QfwwG7vSucBYaTAaAYn0rh1E",
@@ -127,22 +127,22 @@ function initializeFirebase() {
     firebase.initializeApp(firebaseConfig);
   }
 
-  window.database = firebase.database();
+  const db = firebase.database();
 
-  window.submitEmotion = function(fear, curiosity) {
+  setup.submitEmotion = function (fear, curiosity) {
     const ts = Date.now();
-    return window.database.ref('emotions/' + ts).set({
+    return db.ref("emotions/" + ts).set({
       fear,
       curiosity,
       timestamp: ts
     });
   };
 
-  window.getAverageEmotion = async function() {
-    const snapshot = await window.database.ref('emotions').once('value');
+  setup.getAverageEmotion = async function () {
+    const snapshot = await db.ref("emotions").once("value");
     const data = snapshot.val();
 
-    if (!data) return { avgFear: 0, avgCuriosity: 0, count: 0 };
+    if (!data) return { avgFear: 0, avgCuriosity: 0 };
 
     let totalFear = 0;
     let totalCuriosity = 0;
@@ -156,15 +156,14 @@ function initializeFirebase() {
 
     return {
       avgFear: Math.round(totalFear / count),
-      avgCuriosity: Math.round(totalCuriosity / count),
-      count
+      avgCuriosity: Math.round(totalCuriosity / count)
     };
   };
 
-  window.firebaseAppInitialized = true;
-}
+  setup.firebaseAppInitialized = true;
+};
 
-initializeFirebase();
+setup.initializeFirebase(); // Make sure it's initialized
 </script><tw-passagedata pid="1" name="meh" tags="" position="775,375" size="100,100"></tw-passagedata><tw-passagedata pid="2" name="Start" tags="" position="1025,400" size="100,100">You&#39;re shivering in the rain. A distant house gives hope. A girl opens the door — stunning, mysterious.
 
 Do you feel...
@@ -255,7 +254,7 @@ You may not survive, but you will not go quietly.
 
 [[submitemotions]]
 
-</tw-passagedata><tw-passagedata pid="12" name="Back away in horror → Death" tags="" position="1525,825" size="100,100"></tw-passagedata><tw-passagedata pid="13" name="FinalEmotion" tags="" position="1725,850" size="100,100">:: EmotionAggregate
+</tw-passagedata><tw-passagedata pid="12" name="Back away in horror → Death" tags="" position="1525,825" size="100,100"></tw-passagedata><tw-passagedata pid="13" name="getAverageEmotion" tags="" position="1725,850" size="100,100">:: EmotionAggregate
 &lt;&lt;set $avgFear = null&gt;&gt;
 &lt;&lt;set $avgCuriosity = null&gt;&gt;
 
@@ -310,15 +309,13 @@ Curiosity:
 &lt;button id=&quot;submitBtn&quot; disabled&gt;Submit Emotions&lt;/button&gt;
 
 &lt;script&gt;
-// Helper function to update the span displaying the current slider value
 function updateDisplay(id, value) {
   const span = document.getElementById(id);
   if (span) span.textContent = value;
 }
 
-// Enable submit button only once submitEmotion function is ready
 function checkSubmitReady() {
-  if (typeof window.submitEmotion === &quot;function&quot;) {
+  if (typeof setup.submitEmotion === &quot;function&quot;) {
     document.getElementById(&#39;submitBtn&#39;).disabled = false;
   } else {
     setTimeout(checkSubmitReady, 300);
@@ -326,17 +323,15 @@ function checkSubmitReady() {
 }
 checkSubmitReady();
 
-// Attach click listener once DOM is loaded
 document.getElementById(&#39;submitBtn&#39;).addEventListener(&#39;click&#39;, () =&gt; {
-  // Read values from SugarCube variables (fallback to 0)
   const fear = SugarCube.State.variables.fear || 0;
   const curiosity = SugarCube.State.variables.curiosity || 0;
 
-  if (typeof window.submitEmotion === &quot;function&quot;) {
-    window.submitEmotion(fear, curiosity)
+  if (typeof setup.submitEmotion === &quot;function&quot;) {
+    setup.submitEmotion(fear, curiosity)
       .then(() =&gt; {
         alert(&#39;Emotions submitted! Proceeding to aggregation...&#39;);
-        Engine.play(&#39;EmotionAggregate&#39;); // Go to next passage
+        Engine.play(&#39;EmotionAggregate&#39;);
       })
       .catch(e =&gt; {
         alert(&#39;Error submitting emotions, please try again.&#39;);
