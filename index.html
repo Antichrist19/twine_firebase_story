@@ -292,43 +292,47 @@ Curiosity:
 
 &lt;button id=&quot;submitBtn&quot; disabled&gt;Submit Emotions&lt;/button&gt;
 
-&lt;script&gt;
-// 🔁 Show slider values
-function updateDisplay(id, value) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = value;
-}
-
-// ✅ Wait until Firebase is ready
-function checkSubmitReady() {
-  if (typeof window.submitEmotion === &quot;function&quot;) {
-    document.getElementById(&#39;submitBtn&#39;).disabled = false;
-  } else {
-    setTimeout(checkSubmitReady, 300);
+&lt;&lt;script&gt;&gt;
+(function() {
+  function updateDisplay(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
   }
-}
-checkSubmitReady();
 
-// ✅ Handle button click
-document.getElementById(&#39;submitBtn&#39;).addEventListener(&#39;click&#39;, () =&gt; {
-  const fear = SugarCube.State.variables.fear || 0;
-  const curiosity = SugarCube.State.variables.curiosity || 0;
-
-  if (typeof window.submitEmotion === &quot;function&quot;) {
-    window.submitEmotion(fear, curiosity)
-      .then(() =&gt; {
-        alert(&#39;✅ Emotion submitted!&#39;);
-        Engine.play(&#39;EmotionAggregate&#39;);  // 🔁 Go to next passage
-      })
-      .catch(e =&gt; {
-        alert(&#39;❌ Submission failed: &#39; + e.message);
-        console.error(e);
-      });
-  } else {
-    alert(&#39;❗ Firebase not ready yet.&#39;);
+  function checkSubmitReady() {
+    if (typeof window.submitEmotion === &quot;function&quot;) {
+      const btn = document.getElementById(&#39;submitBtn&#39;);
+      if (btn) btn.disabled = false;
+    } else {
+      setTimeout(checkSubmitReady, 300);
+    }
   }
-});
-&lt;/script&gt;
+
+  // This ensures SugarCube and DOM are ready
+  $(document).on(&#39;passagerender&#39;, function () {
+    checkSubmitReady();
+
+    $(&quot;#submitBtn&quot;).off(&quot;click&quot;).on(&quot;click&quot;, function () {
+      const fear = SugarCube.State.variables.fear || 0;
+      const curiosity = SugarCube.State.variables.curiosity || 0;
+
+      if (typeof window.submitEmotion === &quot;function&quot;) {
+        window.submitEmotion(fear, curiosity)
+          .then(() =&gt; {
+            alert(&quot;✅ Emotion submitted!&quot;);
+            Engine.play(&quot;EmotionAggregate&quot;);
+          })
+          .catch(e =&gt; {
+            alert(&quot;❌ Submission failed: &quot; + e.message);
+            console.error(e);
+          });
+      } else {
+        alert(&quot;❗ Firebase not ready yet.&quot;);
+      }
+    });
+  });
+})();
+&lt;&lt;/script&gt;&gt;
 </tw-passagedata><tw-passagedata pid="15" name="FearEnding" tags="" position="2050,800" size="100,100">The collective fear overwhelmed the moment.  
 The traveler turns and runs into the storm, never looking back...
 
