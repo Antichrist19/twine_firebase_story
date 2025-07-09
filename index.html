@@ -2,9 +2,7 @@
 <html data-init="no-js">
 <head>
 <meta charset="UTF-8" />
-<script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-database-compat.js"></script>
-
+<script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-database-compat.js"></script>
 <title>Eyes</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <meta name="application-name" content="SugarCube" />
@@ -279,45 +277,73 @@ You may not survive, but you will not go quietly.
   }
 })();
 &lt;&lt;/script&gt;&gt;
-</tw-passagedata><tw-passagedata pid="14" name="SubmitEmotions" tags="" position="1850,850" size="100,100">&lt;script&gt;
-function updateDisplay(id, value) {
-  const span = document.getElementById(id);
-  if (span) span.textContent = value;
-}
+</tw-passagedata><tw-passagedata pid="14" name="SubmitEmotions" tags="" position="1850,850" size="100,100">:: SubmitEmotions
+&lt;p&gt;Rate your feelings:&lt;/p&gt;
 
-function checkSubmitReady() {
-  if (typeof window.submitEmotion === &quot;function&quot;) {
-    document.getElementById(&#39;submitBtn&#39;).disabled = false;
-  } else {
-    setTimeout(checkSubmitReady, 300);
-  }
-}
-checkSubmitReady();
+Fear: 
+&lt;input id=&quot;fearSlider&quot; type=&quot;range&quot; min=&quot;0&quot; max=&quot;5&quot; value=&quot;0&quot;&gt;
+&lt;span id=&quot;fearValue&quot;&gt;0&lt;/span&gt;&lt;br&gt;
 
-document.getElementById(&#39;submitBtn&#39;).addEventListener(&#39;click&#39;, () =&gt; {
-  const fear = SugarCube.State.variables.fear || 0;
-  const curiosity = SugarCube.State.variables.curiosity || 0;
+Curiosity: 
+&lt;input id=&quot;curiositySlider&quot; type=&quot;range&quot; min=&quot;0&quot; max=&quot;5&quot; value=&quot;0&quot;&gt;
+&lt;span id=&quot;curiosityValue&quot;&gt;0&lt;/span&gt;&lt;br&gt;
 
-  if (typeof window.submitEmotion === &quot;function&quot;) {
-    window.submitEmotion(fear, curiosity)
-      .then(() =&gt; {
-        alert(&quot;✅ Emotions submitted!&quot;);
+&lt;button id=&quot;submitBtn&quot; disabled&gt;Submit Emotions&lt;/button&gt;
 
-        // ✅ Safely transition to next passage
-        if (window.SugarCube &amp;&amp; SugarCube.Engine) {
-          SugarCube.Engine.play(&#39;EmotionAggregate&#39;);
-        } else {
-          alert(&quot;⚠️ Error: SugarCube Engine not available.&quot;);
-        }
-      })
-      .catch((e) =&gt; {
-        alert(&quot;❌ Submission failed: &quot; + e.message);
-        console.error(e);
-      });
-  } else {
-    alert(&quot;⚠️ Firebase not ready yet. Please wait...&quot;);
-  }
-});
+&lt;script class=&quot;twine-user-script&quot;&gt;
+(function () {
+  $(document).on(&#39;:passagerender&#39;, function (ev) {
+    const fearSlider = ev.content.querySelector(&#39;#fearSlider&#39;);
+    const curiositySlider = ev.content.querySelector(&#39;#curiositySlider&#39;);
+    const submitBtn = ev.content.querySelector(&#39;#submitBtn&#39;);
+    const fearValue = ev.content.querySelector(&#39;#fearValue&#39;);
+    const curiosityValue = ev.content.querySelector(&#39;#curiosityValue&#39;);
+
+    if (!fearSlider || !curiositySlider || !submitBtn) return;
+
+    // Update displayed values and SugarCube state
+    fearSlider.addEventListener(&#39;input&#39;, () =&gt; {
+      const val = parseInt(fearSlider.value);
+      SugarCube.State.variables.fear = val;
+      fearValue.textContent = val;
+    });
+
+    curiositySlider.addEventListener(&#39;input&#39;, () =&gt; {
+      const val = parseInt(curiositySlider.value);
+      SugarCube.State.variables.curiosity = val;
+      curiosityValue.textContent = val;
+    });
+
+    // Enable button when Firebase is ready
+    function checkSubmitReady() {
+      if (typeof window.submitEmotion === &quot;function&quot;) {
+        submitBtn.disabled = false;
+      } else {
+        setTimeout(checkSubmitReady, 300);
+      }
+    }
+    checkSubmitReady();
+
+    submitBtn.addEventListener(&#39;click&#39;, () =&gt; {
+      const fear = SugarCube.State.variables.fear || 0;
+      const curiosity = SugarCube.State.variables.curiosity || 0;
+
+      if (typeof window.submitEmotion === &quot;function&quot;) {
+        window.submitEmotion(fear, curiosity)
+          .then(() =&gt; {
+            alert(&quot;✅ Emotions submitted!&quot;);
+            SugarCube.Engine.play(&#39;EmotionAggregate&#39;);
+          })
+          .catch(e =&gt; {
+            console.error(e);
+            alert(&quot;❌ Submission failed: &quot; + e.message);
+          });
+      } else {
+        alert(&quot;⚠️ Firebase not ready yet. Please wait...&quot;);
+      }
+    });
+  });
+})();
 &lt;/script&gt;
 </tw-passagedata><tw-passagedata pid="15" name="FearEnding" tags="" position="2050,800" size="100,100">The collective fear overwhelmed the moment.  
 The traveler turns and runs into the storm, never looking back...
