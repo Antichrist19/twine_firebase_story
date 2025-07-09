@@ -289,52 +289,46 @@ You may not survive, but you will not go quietly.
 
 [[FinalEmotion]]
 
-</tw-passagedata><tw-passagedata pid="12" name="Back away in horror → Death" tags="" position="1525,825" size="100,100"></tw-passagedata><tw-passagedata pid="13" name="FinalEmotion" tags="" position="1725,850" size="100,100">&lt;h3&gt;Processing emotional data from all players...&lt;/h3&gt;
-&lt;p&gt;Please wait a moment...&lt;/p&gt;
+</tw-passagedata><tw-passagedata pid="12" name="Back away in horror → Death" tags="" position="1525,825" size="100,100"></tw-passagedata><tw-passagedata pid="13" name="FinalEmotion" tags="" position="1725,850" size="100,100">:: EmotionAggregate
+&lt;&lt;set $avgFear = null&gt;&gt;
+&lt;&lt;set $avgCuriosity = null&gt;&gt;
+
+&lt;p&gt;Waiting for aggregated emotions from all players...&lt;/p&gt;
+&lt;p id=&quot;result&quot;&gt;Loading...&lt;/p&gt;
 
 &lt;&lt;script&gt;&gt;
-setup.getAverageEmotion().then(result =&gt; {
-  State.variables.avgFear = result.avgFear;
-  State.variables.avgCuriosity = result.avgCuriosity;
+(function waitForSetup() {
+  if (setup &amp;&amp; typeof setup.getAverageEmotion === &quot;function&quot;) {
+    // Wait 10 seconds before fetching aggregated emotions
+    setTimeout(() =&gt; {
+      setup.getAverageEmotion().then(result =&gt; {
+        // Save results to variables
+        SugarCube.State.variables.avgFear = result.avgFear;
+        SugarCube.State.variables.avgCuriosity = result.avgCuriosity;
 
-  // Simple logic for branching outcome:
-  if (result.avgFear &gt;= 3 &amp;&amp; result.avgFear &gt; result.avgCuriosity) {
-    Engine.play(&quot;Ending_RunAway&quot;);
-  } else if (result.avgCuriosity &gt;= 3 &amp;&amp; result.avgCuriosity &gt; result.avgFear) {
-    Engine.play(&quot;Ending_FaceThem&quot;);
+        // Show results on page
+        document.getElementById(&quot;result&quot;).textContent = 
+          `Aggregated emotions after 10 seconds: Fear = ${result.avgFear}, Curiosity = ${result.avgCuriosity}`;
+
+        // Decide ending based on which emotion is higher
+        if (result.avgFear &gt; result.avgCuriosity) {
+          Engine.play(&#39;FearEnding&#39;);   // Replace with your fear ending passage name
+        } else if (result.avgCuriosity &gt; result.avgFear) {
+          Engine.play(&#39;CuriousEnding&#39;); // Replace with your curiosity ending passage name
+        } else {
+          Engine.play(&#39;NeutralEnding&#39;); // Optional tie-breaker ending
+        }
+      }).catch(err =&gt; {
+        document.getElementById(&quot;result&quot;).textContent = &quot;Error loading aggregated emotions.&quot;;
+        console.error(err);
+      });
+    }, 10000); // 10 seconds delay
   } else {
-    Engine.play(&quot;Ending_Fatal&quot;);
-  }
-});
-&lt;&lt;/script&gt;&gt;
-</tw-passagedata><tw-passagedata pid="14" name="FinalEmotionDecision" tags="" position="1850,850" size="100,100">&lt;h3&gt;Analyzing emotions...&lt;/h3&gt;
-&lt;p&gt;Please wait a moment...&lt;/p&gt;
-
-&lt;&lt;script&gt;&gt;
-(function waitForFirebase() {
-  if (setup.getAverageEmotion) {
-    setup.getAverageEmotion().then(result =&gt; {
-      State.variables.avgFear = result.avgFear;
-      State.variables.avgCuriosity = result.avgCuriosity;
-
-      if (result.avgFear &gt;= 3 &amp;&amp; result.avgFear &gt; result.avgCuriosity) {
-        Engine.play(&quot;Ending_RunAway&quot;);
-      } else if (result.avgCuriosity &gt;= 3 &amp;&amp; result.avgCuriosity &gt; result.avgFear) {
-        Engine.play(&quot;Ending_FaceThem&quot;);
-      } else {
-        Engine.play(&quot;Ending_Fatal&quot;);
-      }
-    }).catch(e =&gt; {
-      alert(&quot;Failed to fetch average emotion.&quot;);
-      console.error(e);
-    });
-  } else {
-    // Wait until function is defined
-    setTimeout(waitForFirebase, 200);
+    setTimeout(waitForSetup, 200);
   }
 })();
 &lt;&lt;/script&gt;&gt;
-</tw-passagedata><tw-passagedata pid="15" name="Ending_RunAway" tags="" position="2050,800" size="100,100">The collective fear overwhelmed the moment.  
+</tw-passagedata><tw-passagedata pid="14" name="FinalEmotionDecision" tags="" position="1850,850" size="100,100"></tw-passagedata><tw-passagedata pid="15" name="FearEnding" tags="" position="2050,800" size="100,100">The collective fear overwhelmed the moment.  
 The traveler turns and runs into the storm, never looking back...
 
 &lt;p&gt;Collected from all players:&lt;/p&gt;
@@ -353,7 +347,7 @@ getAverageEmotion().then(function(result) {
   }
 });
 &lt;&lt;/script&gt;&gt;
-</tw-passagedata><tw-passagedata pid="16" name="Ending_Facethem" tags="" position="2050,925" size="100,100">Curiosity takes over.  
+</tw-passagedata><tw-passagedata pid="16" name="CuriousEnding" tags="" position="2050,925" size="100,100">Curiosity takes over.  
 He steps forward, facing the girl and the eyeless man with brave resolve...
 
 &lt;p&gt;Collected from all players:&lt;/p&gt;
@@ -372,7 +366,7 @@ getAverageEmotion().then(function(result) {
   }
 });
 &lt;&lt;/script&gt;&gt;
-</tw-passagedata><tw-passagedata pid="17" name="Ending_Fatal" tags="" position="2050,1050" size="100,100">The emotions are balanced.  
+</tw-passagedata><tw-passagedata pid="17" name="NeutralEnding" tags="" position="2050,1050" size="100,100">The emotions are balanced.  
 He stands frozen at the threshold, unsure whether to flee or fight...
 
 &lt;p&gt;Collected from all players:&lt;/p&gt;
